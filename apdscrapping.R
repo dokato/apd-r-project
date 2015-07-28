@@ -4,7 +4,7 @@
 library(rvest)
 library(stringr)
 
-trim <- function (x) gsub("^\\s+|^\n|\\s+$", "", x)
+trim <- function(x) gsub("^\\s+|^\n|\\s+$", "", x)
 
 infopageapd <-function(url){
   diploma <- html(url)
@@ -64,7 +64,7 @@ catu3<-"https://apd.uw.edu.pl"
 
 ####################### MAIN LOOP
 apddb <- c("titpl", "titeng", "keypl", "keyeng", "lang", "author", "promotor","data", "degree", "field")
-for (i in 2001:3000){
+for (i in 3001:4000){
   cat.page <- paste(catu1, toString(i),catu2, sep="")
   web <- html(cat.page)
   links<-web %>% html_nodes("a") %>% html_attr("href")
@@ -85,5 +85,5 @@ for (i in 2001:3000){
   }
 }
 
-write.table(apddb,"apddb_x3.csv", sep=";", quote=FALSE, row.names=FALSE, col.names=FALSE)
+write.table(apddb,"apddb_x4.csv", sep=";", quote=FALSE, row.names=FALSE, col.names=FALSE)
 #######################
