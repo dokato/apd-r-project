@@ -5,25 +5,11 @@ library("igraph")
 trim <- function(x) gsub("^\\s+|^\n|\\s+$", "", x)
 
 load("apd.Rda")
-tags.lst<-strsplit(apddata$keypl,",")
+ixs<-grep("[<>]", apddata$keypl)
+tags.lst<-strsplit(apddata$keypl[-ixs],",")
 
-# trim(unlist(wx[3]))
-# gsub(".","",unlist(wx[3]))
-# gsub(",","",unlist(wx[3]))
-# tolower(unlist(wx[3]))
-# 
-# dfx <- data.frame(v1= character(0), v2= character(0), strength= numeric(0))
-# 
-# g <- graph.empty()
-# 
-# g["a","b", attr="weight"] <- 2
-# g["c","a"] <- g["c","a"] + 4
-# length(V(g)[V(g)$name=='a' ]) #check if exists
 
 graph.tags <- graph.empty(directed=FALSE)
-
-# !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-# weight of the vertex
 
 for (i in 1:length(tags.lst)){
   cat(i, " ")
@@ -47,6 +33,9 @@ for (i in 1:length(tags.lst)){
   }
   for (k in 1:length(row)){
     for (j in 1:length(row)){
+      if (k==j){
+        next
+      }
       if (graph.tags[row[k], row[j]]==0){
         graph.tags[row[k], row[j], attr="weight"] <- 1
       }
@@ -56,3 +45,43 @@ for (i in 1:length(tags.lst)){
     }
   }
 }
+
+nodes <- data.frame(cbind(V(graph.tags), as.character(V(graph.tags))))
+edges <- t(Vectorize(get.edge, vectorize.args='id')(graph.tags, 1:ecount(graph.tags)))
+gr.xml <- write.gexf(nodes, edges)
+
+
+saveAsGEXF = function(g, filepath="converted_graph.gexf"){
+  require(igraph)
+  require(rgexf)
+  # gexf nodes require two column data frame (id, label)
+  # check if the input vertices has label already present
+  # if not, just have the ids themselves as the label
+  if(is.null(V(g)$label))
+    V(g)$label <- enc2utf8(as.character(V(g)$name))
+  # similarily if edges does not have weight, add default 1 weight
+  if(is.null(E(g)$weight))
+    E(g)$weight <- rep.int(1, ecount(g))
+  nodes <- data.frame(cbind(V(g), V(g)$label))
+  edges <- t(Vectorize(get.edge, vectorize.args='id')(g, 1:ecount(g)))
+  # combine all node attributes into a matrix (and take care of & for xml)
+  vAttrNames <- setdiff(list.vertex.attributes(g), "label")
+  nodesAtt <- data.frame(sapply(vAttrNames, function(attr) sub("&", "&",get.vertex.attribute(g, attr))),
+                         stringsAsFactors = FALSE)
+  # combine all edge attributes into a matrix (and take care of & for xml
+  eAttrNames <- setdiff(list.edge.attributes(g), "weight")
+  edgesAtt <- data.frame(sapply(eAttrNames, function(attr) sub("&", "&",get.edge.attribute(g, attr))),
+                         stringsAsFactors = FALSE)
+  
+  # generate the gexf object
+  
+  output <- write.gexf(nodes, edges,
+                       edgesWeight=E(g)$weight,
+                       edgesAtt = edgesAtt,                      
+                       nodesAtt = nodesAtt)
+  
+  print(output, filepath, replace=T)
+  
+}
+
+write.graph(graph.tags, "apdtagsgraph.graphml", format="graphml")
