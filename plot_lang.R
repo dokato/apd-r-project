@@ -19,3 +19,11 @@ ggplot(apddatacl, aes(x=factor(apddatacl$rok))) +
   theme(plot.title=element_text(face="bold", size=16))
 
 
+grapd <- apddatacl %>%
+            group_by(degree)
+
+ggplot(grapd, aes(x=as.factor(grapd$rok))) +
+  geom_bar()
+
+ggplot(apddatacl, aes(x=factor(apddatacl$rok), fill=factor(degree), group=factor(field))) +
+  geom_bar()
